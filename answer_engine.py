@@ -4,31 +4,39 @@ from rag import client
 from search_qdrant import retrieve_pages
 
 
-def answer_question(question):
-
+def answer_question(
+    question,
+    query_image=None,
+    selected_documents=None,
+    limit=3,
+    expand_graph=True,
+):
     results = retrieve_pages(
         question,
-        limit=3
+        query_image=query_image,
+        limit=limit,
+        selected_documents=selected_documents,
+        expand_graph=expand_graph,
+        extra_neighbors=2,
     )
 
     images = []
     page_info = []
 
-    for point in results:
+    if query_image is not None:
+        images.append(query_image)
 
-        page_path = point.payload["page_path"]
-
-        description = point.payload["description"]
-
+    for result in results:
+        page_path = result["page_path"]
+        description = result.get("description", "")
         image = Image.open(page_path)
-
         images.append(image)
 
         page_info.append(
             f"""
-Document: {point.payload['document']}
+Document: {result.get('document', 'unknown')}
 Page: {page_path}
-Score: {round(point.score,4)}
+Score: {round(result.get('score') or 0, 4)}
 
 Description:
 {description}
@@ -54,11 +62,9 @@ Instructions:
 
 3. Mention which page(s) were used.
 
-4. Use charts, tables, diagrams,
-   and images if relevant.
+4. Use charts, tables, diagrams, and images if relevant.
 
-5. If answer not found:
-
+5. If the answer is missing from retrieved pages, reply exactly:
 Answer not found in retrieved pages.
 """
 
@@ -67,4 +73,7 @@ Answer not found in retrieved pages.
         contents=images + [prompt]
     )
 
-    return response.text
+    return {
+        "answer": response.text,
+        "results": results,
+    }

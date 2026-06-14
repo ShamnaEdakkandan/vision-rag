@@ -1,6 +1,13 @@
 # Vision RAG — Gemini Vision Edition
 
-A visual document intelligence system that reads PDFs the way a human does — page by page, visually. Ask questions in plain English and get answers grounded in what the document actually shows.
+A visual document intelligence system that reads PDFs the way a human does — page by page, visually. Ask questions in plain English, upload a query image, and get answers grounded in what the document actually shows.
+
+This repo now supports:
+- PDF page thumbnails
+- Chat history
+- Multi-document search
+- Multimodal queries with image + question
+- GraphRAG neighbor expansion
 
 ---
 
@@ -33,23 +40,23 @@ Page 4:
 
 These descriptions are embedded and stored. When a user asks a question, the query is embedded and matched against stored page descriptions. Top pages are retrieved and sent back to Gemini Vision, which reads them directly and generates the final answer.
 
-### Level 2 — Agentic Search (LangGraph)
+### Level 2 — Agentic Search
 
-Instead of a single retrieval pass, a LangGraph agent decides whether the retrieved pages are enough to fully answer the question. If not, it searches again and combines results.
+Instead of a single retrieval pass, the system can expand retrieval when initial pages are not sufficient. If the first pass is not enough, it collects additional related pages and combines them into the final answer.
 
 ```
 Question → Search → Enough information?
                          │
-                        No → Search Again → Combine → Answer
+                        No → Search again → Expand retrieval → Answer
                          │
                         Yes → Answer
 ```
 
 This improves accuracy on questions that span multiple pages.
 
-### Level 3 — GraphRAG (NetworkX)
+### Level 3 — GraphRAG
 
-After ingestion, Gemini extracts key concepts from each page. NetworkX builds a knowledge graph linking pages that share related concepts.
+After ingestion, the system builds a lightweight page relationship graph from page descriptions. Pages that share related concepts become linked, and retrieval can expand along those connections.
 
 ```
 Page 1: Revenue, Sales, Products
@@ -80,14 +87,14 @@ Gemini: "Bar chart showing quarterly revenue growth"
 
 | Tool | Purpose |
 |------|---------|
-| pdf2image | Convert PDF pages to images |
+| PyMuPDF (fitz) | Convert PDF pages to images |
 | Pillow | Image processing and cleanup |
 | Gemini 2.5 Flash | Vision understanding and answer generation |
 | text-embedding-004 | Generate embeddings for page descriptions and queries |
 | NumPy | Store and load vectors as .npy files |
 | python-dotenv | Load GEMINI_API_KEY from .env |
 | LangGraph | Agentic search workflow |
-| NetworkX | Knowledge graph for GraphRAG |
+| JSON / custom graph | Knowledge graph for GraphRAG |
 | Streamlit | Web UI |
 | Qdrant | Vector database (optional upgrade from .npy) |
 
@@ -99,20 +106,18 @@ Gemini: "Bar chart showing quarterly revenue growth"
 vision-rag/
 ├── .env                  ← GEMINI_API_KEY=your_key_here
 ├── pdfs/                 ← drop PDF files here
-├── pages/                ← converted page images
-├── index/
-│   ├── vectors.npy       ← stored page embeddings
-│   └── metadata.json     ← page number to file mapping
-├── graph/
-│   └── graph.json        ← NetworkX knowledge graph
-├── rag.py                ← shared Gemini client and embedding setup
-├── ingest.py             ← PDF to index pipeline
-├── query.py              ← search and answer pipeline
-├── agent.py              ← LangGraph agentic search
-├── graph_builder.py      ← builds GraphRAG knowledge graph
-├── multimodal.py         ← image query handling
-├── app.py                ← Streamlit web UI
-└── requirements.txt
+├── pages/                ← converted page images organized per PDF
+├── index/                ← stored metadata and graph files
+│   ├── <document>_descriptions.json
+│   ├── <document>_metadata.json
+│   └── graph.json        ← GraphRAG neighbor graph
+├── rag.py                ← shared Gemini client setup
+├── ingest_pdf.py         ← PDF ingestion, page description, embeddings, Qdrant upload
+├── search_qdrant.py      ← semantic retrieval with optional image query and GraphRAG expansion
+├── answer_engine.py      ← Gemini answer generation over retrieved pages
+├── graph_builder.py      ← builds the page relationship graph for GraphRAG
+├── app.py                ← Streamlit web UI with thumbnails and chat history
+└── test.py               ← example or debug scripts
 ```
 
 ---
@@ -195,6 +200,8 @@ python ingest.py pdfs/report.pdf
 ```bash
 python query.py "What drove revenue growth in Q3?"
 ```
+
+You can also upload an image alongside your question in the Streamlit UI for multimodal search.
 
 ### Launch the UI
 
