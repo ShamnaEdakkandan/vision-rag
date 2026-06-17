@@ -1,4 +1,5 @@
 from PIL import Image
+import google.genai.errors as genai_errors
 
 from rag import client
 from search_qdrant import retrieve_pages
@@ -49,31 +50,37 @@ You are a Vision RAG assistant.
 Question:
 {question}
 
-Retrieved Context:
+Retrieved Context (Ranked by Relevance):
 {chr(10).join(page_info)}
 
 Instructions:
 
-1. Use BOTH:
-   - page images
-   - page descriptions
-
-2. Answer only from retrieved pages.
-
-3. Mention which page(s) were used.
-
-4. Use charts, tables, diagrams, and images if relevant.
-
-5. If the answer is missing from retrieved pages, reply exactly:
+1. Prioritize the most relevant document(s) that directly answer the question: "{question}".
+2. Use BOTH image content and descriptions provided in the context.
+3. Organize your answer logically: Start with the most direct answer, then provide supporting details from other pages if relevant.
+4. Mention specifically which document and page(s) were used for each part of your answer.
+5. If the answer is missing from the retrieved pages, reply exactly:
 Answer not found in retrieved pages.
 """
 
-    response = client.models.generate_content(
-        model="gemini-2.5-flash",
-        contents=images + [prompt]
-    )
+    try:
+        response = client.models.generate_content(
+            model="gemini-3.1-flash-lite",
+            contents=images + [prompt]
+        )
+        answer_text = response.text
+    except genai_errors.ServerError:
+        answer_text = (
+            "The Gemini model is currently unavailable due to high demand. "
+            "Please try again in a few moments."
+        )
+    except genai_errors.APIError:
+        answer_text = (
+            "An error occurred while generating the answer. "
+            "Please try again later."
+        )
 
     return {
-        "answer": response.text,
+        "answer": answer_text,
         "results": results,
     }

@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from PIL import Image
-from qdrant_client import QdrantClient
+from qdrant_client import QdrantClient, models
 
 from rag import client
 from graph_builder import get_graph_neighbors, load_graph
@@ -50,17 +50,26 @@ def retrieve_pages(
 
     query_vector = embed_text(query_text)
 
-    query_limit = max(limit * 4, limit + 5)
+    query_filter = None
+    if selected_documents:
+        query_filter = models.Filter(
+            must=[
+                models.FieldCondition(
+                    key="document",
+                    match=models.MatchAny(any=selected_documents)
+                )
+            ]
+        )
+
     results = qdrant.query_points(
         collection_name="vision_rag",
         query=query_vector,
-        limit=query_limit,
+        limit=limit,
+        query_filter=query_filter,
     )
 
     points = []
     for point in results.points:
-        if selected_documents and point.payload.get("document") not in selected_documents:
-            continue
         points.append(
             {
                 "point_id": point.id,

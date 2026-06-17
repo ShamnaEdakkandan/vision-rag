@@ -1,0 +1,48 @@
+{
+  "nodes": {
+    "pages\\Fijas Muhammad C P\\page_1.png": {
+      "document": "Fijas Muhammad C P",
+      "page_number": 1,
+      "concepts": [
+        "software",
+        "skills",
+        "engineer",
+        "resume",
+        "fijas",
+        "muhammad",
+        "summary",
+        "experience",
+        "professional",
+        "dates",
+        "headings",
+        "section"
+      ]
+    },
+    "pages\\Fijas Muhammad C P\\page_2.png": {
+      "document": "Fijas Muhammad C P",
+      "page_number": 2,
+      "concepts": [
+        "college",
+        "science",
+        "django",
+        "html",
+        "projects",
+        "additional",
+        "mysql",
+        "project",
+        "present",
+        "section",
+        "resume",
+        "curriculum"
+      ]
+    }
+  },
+  "edges": {
+    "pages\\Fijas Muhammad C P\\page_1.png": {
+      "pages\\Fijas Muhammad C P\\page_2.png": 2
+    },
+    "pages\\Fijas Muhammad C P\\page_2.png": {
+      "pages\\Fijas Muhammad C P\\page_1.png": 2
+    }
+  }
+}
