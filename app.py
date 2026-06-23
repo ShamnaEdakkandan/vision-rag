@@ -277,8 +277,8 @@ st.markdown(
     <div class="aura-bg"></div>
 
     <div class="hero-section">
-        <div class="hero-tag">System Version 2.0</div>
-        <h1 class="hero-title">Vision RAG</h1>
+        # <div class="hero-tag">System Version 2.0</div>
+        <h1 class="hero-title">DocLens</h1>
         <p class="hero-subtitle">Visual-first document intelligence. Connect your complex PDFs to a multimodal retrieval engine that understands exactly what it sees.</p>
     </div>
 
